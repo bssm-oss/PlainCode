@@ -64,7 +64,7 @@ func main() {
 func printUsage() {
 	fmt.Print(`plaincode — spec-first multi-agent build orchestrator
 
-Usage: forge <command> [options]
+Usage: plaincode <command> [options]
 
 Core Commands:
   init                        Initialize a new PlainCode project
