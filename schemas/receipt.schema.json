@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://plaincode.dev/schemas/receipt.schema.json",
+  "title": "PlainCode Build Receipt",
+  "description": "Captures the full audit trail of a single spec build.",
+  "type": "object",
+  "required": ["build_id", "spec_id", "spec_hash", "backend_id", "approval_profile", "status", "started_at", "completed_at"],
+  "properties": {
+    "build_id": {
+      "type": "string",
+      "description": "Unique identifier for this build (UUID)."
+    },
+    "spec_id": {
+      "type": "string",
+      "description": "The spec ID that was built."
+    },
+    "spec_hash": {
+      "type": "string",
+      "description": "SHA-256 truncated hash of the spec file content."
+    },
+    "imported_spec_hashes": {
+      "type": "object",
+      "additionalProperties": { "type": "string" },
+      "description": "Map of imported spec ID to their hashes."
+    },
+    "backend_id": {
+      "type": "string",
+      "description": "The backend used for code generation."
+    },
+    "model": {
+      "type": "string",
+      "description": "Model identifier (for API backends)."
+    },
+    "cli_version": {
+      "type": "string",
+      "description": "CLI tool version (for CLI backends)."
+    },
+    "approval_profile": {
+      "type": "string",
+      "enum": ["plan", "patch", "workspace-auto", "sandbox-auto", "full-trust"]
+    },
+    "mcp_servers": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "skills_used": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "changed_files": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "tests_run": { "type": "integer" },
+    "tests_passed": { "type": "integer" },
+    "tests_failed": { "type": "integer" },
+    "coverage_before": { "type": "number" },
+    "coverage_after": { "type": "number" },
+    "retries": { "type": "integer" },
+    "input_tokens": { "type": "integer" },
+    "output_tokens": { "type": "integer" },
+    "cost_usd": { "type": "number" },
+    "duration_ms": { "type": "integer" },
+    "status": {
+      "type": "string",
+      "enum": ["success", "failed", "partial"]
+    },
+    "error": { "type": "string" },
+    "started_at": { "type": "string", "format": "date-time" },
+    "completed_at": { "type": "string", "format": "date-time" }
+  }
+}

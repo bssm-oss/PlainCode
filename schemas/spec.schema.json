@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://plaincode.dev/schemas/spec.schema.json",
+  "title": "PlainCode Spec Frontmatter",
+  "description": "YAML frontmatter schema for PlainCode spec files.",
+  "type": "object",
+  "required": ["id", "language"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique spec identifier, e.g. 'billing/invoice-pdf'.",
+      "pattern": "^[a-z0-9][a-z0-9/_-]*$"
+    },
+    "language": {
+      "type": "string",
+      "description": "Target programming language.",
+      "enum": ["go", "python", "typescript", "javascript", "rust", "java"]
+    },
+    "imports": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Other spec IDs this spec depends on."
+    },
+    "managed_files": {
+      "type": "object",
+      "properties": {
+        "owned": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Files exclusively owned by this spec."
+        },
+        "shared": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Files shared with other specs."
+        },
+        "readonly": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Files that can be read but not modified. Supports globs."
+        }
+      }
+    },
+    "backend": {
+      "type": "object",
+      "properties": {
+        "preferred": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Preferred backend IDs in priority order."
+        }
+      }
+    },
+    "approval": {
+      "type": "string",
+      "enum": ["plan", "patch", "workspace-auto", "sandbox-auto", "full-trust"],
+      "description": "Autonomy profile for this spec's builds."
+    },
+    "tests": {
+      "type": "object",
+      "properties": {
+        "command": {
+          "type": "string",
+          "description": "Shell command to run tests."
+        }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "properties": {
+        "target": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Target coverage percentage (0.0–1.0)."
+        }
+      }
+    },
+    "budget": {
+      "type": "object",
+      "properties": {
+        "max_turns": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Maximum LLM interaction turns."
+        },
+        "max_cost_usd": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Maximum cost in USD."
+        }
+      }
+    }
+  }
+}
