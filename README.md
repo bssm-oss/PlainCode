@@ -2,6 +2,21 @@
 
 **A spec-first build orchestrator that compiles Markdown specs into real code using pluggable AI backends, validates and repairs the output, and enforces deterministic file ownership and build receipts.**
 
+## Install
+
+```bash
+git clone https://github.com/bssm-oss/PlainCode.git && cd PlainCode && ./install.sh
+```
+
+Works immediately:
+```bash
+plaincode version
+plaincode init
+plaincode build --spec my-feature
+```
+
+---
+
 PlainCode is not a code generator. It is not a prompt wrapper. It is not a Claude wrapper.
 
 PlainCode is an orchestrator that treats **specifications as the source of truth**, **AI as a swappable backend**, and **build outputs as reproducible, auditable artifacts**. It enables teams to adopt spec-driven development incrementally — without rewriting their entire codebase.
