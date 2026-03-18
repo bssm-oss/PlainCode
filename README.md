@@ -5,6 +5,13 @@
 ## Install
 
 ```bash
+go install github.com/bssm-oss/PlainCode/cmd/plaincode@latest
+```
+
+> If `plaincode: command not found`, add `export PATH=$PATH:$HOME/go/bin` to your `~/.zshrc` or `~/.bashrc`.
+
+Or clone and build locally:
+```bash
 git clone https://github.com/bssm-oss/PlainCode.git && cd PlainCode && ./install.sh
 ```
 
@@ -13,6 +20,7 @@ Works immediately:
 plaincode version
 plaincode init
 plaincode build --spec my-feature
+plaincode providers list
 ```
 
 ---
