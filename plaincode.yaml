@@ -1,0 +1,28 @@
+version: 1
+project:
+  spec_dir: spec
+  state_dir: .plaincode
+  default_language: go
+defaults:
+  backend: cli:claude
+  approval: patch
+  retry_limit: 3
+providers:
+  cli:claude:
+    kind: cli-claude
+    binary: claude
+  cli:codex:
+    kind: cli-codex
+    binary: codex
+  cli:gemini:
+    kind: cli-gemini
+    binary: gemini
+  cli:copilot:
+    kind: cli-copilot
+    binary: copilot
+  cli:cursor:
+    kind: cli-cursor
+    binary: cursor-cli
+  cli:opencode:
+    kind: cli-opencode
+    binary: opencode

@@ -1,0 +1,22 @@
+# Build artifacts
+/plaincode
+/plaincoded
+mock_output.go
+
+# State directory
+.plaincode/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temp
+*.tmp
+prompt*.txt
+firebase-debug.log
