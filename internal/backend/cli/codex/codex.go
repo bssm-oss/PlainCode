@@ -2,11 +2,12 @@
 //
 // Invocation: codex exec [flags] "<prompt>"
 // Key flags:
-//   --full-auto: non-interactive automation
-//   --output-last-message <file>: save last response to file
-//   --json: JSON event stream output
-//   --sandbox: enable sandboxed execution
-//   --dangerously-bypass-approvals-and-sandbox: full-trust only
+//
+//	--full-auto: non-interactive automation
+//	--output-last-message <file>: save last response to file
+//	--json: JSON event stream output
+//	--sandbox: enable sandboxed execution
+//	--dangerously-bypass-approvals-and-sandbox: full-trust only
 package codex
 
 import (
@@ -61,6 +62,9 @@ func (b *Backend) Execute(ctx context.Context, req *core.ExecRequest, sink core.
 	if err != nil {
 		return nil, fmt.Errorf("codex exec failed: %w", err)
 	}
+	if result.ExitCode != 0 {
+		return nil, fmt.Errorf("codex exec exited with code %d: %s%s", result.ExitCode, result.Stdout, result.Stderr)
+	}
 
 	// Read output from temp file
 	output := result.Stdout
@@ -87,7 +91,7 @@ func (b *Backend) HealthCheck(ctx context.Context) error {
 
 // buildArgs translates policy profile to Codex CLI flags.
 func (b *Backend) BuildArgs(req *core.ExecRequest) []string {
-	args := []string{"exec"}
+	args := []string{"exec", "--skip-git-repo-check"}
 
 	switch req.ApprovalProfile {
 	case core.ProfilePlan:

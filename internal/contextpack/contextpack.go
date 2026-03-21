@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/bssm-oss/PlainCode/internal/spec/ast"
@@ -175,6 +176,25 @@ func (pack *ContextPack) ToPrompt() string {
 		b.WriteString("\n\n")
 	}
 
+	if len(pack.Skills) > 0 {
+		b.WriteString("# Skills\n\n")
+		for _, skill := range pack.Skills {
+			fmt.Fprintf(&b, "- %s\n", skill)
+		}
+		b.WriteString("\n")
+	}
+
+	if pack.PolicySummary != "" || pack.BackendCapabilities != "" {
+		b.WriteString("# Execution Constraints\n\n")
+		if pack.PolicySummary != "" {
+			fmt.Fprintf(&b, "Policy: %s\n", pack.PolicySummary)
+		}
+		if pack.BackendCapabilities != "" {
+			fmt.Fprintf(&b, "Backend: %s\n", pack.BackendCapabilities)
+		}
+		b.WriteString("\n")
+	}
+
 	b.WriteString("# File Ownership\n\n")
 	fmt.Fprintf(&b, "Owned: %v\n", pack.OwnedFiles)
 	fmt.Fprintf(&b, "Shared: %v\n", pack.SharedFiles)
@@ -182,7 +202,13 @@ func (pack *ContextPack) ToPrompt() string {
 
 	if len(pack.SourceContents) > 0 {
 		b.WriteString("# Current Source Files\n\n")
-		for path, content := range pack.SourceContents {
+		paths := make([]string, 0, len(pack.SourceContents))
+		for path := range pack.SourceContents {
+			paths = append(paths, path)
+		}
+		sort.Strings(paths)
+		for _, path := range paths {
+			content := pack.SourceContents[path]
 			fmt.Fprintf(&b, "## %s\n```\n%s\n```\n\n", path, content)
 		}
 	}
