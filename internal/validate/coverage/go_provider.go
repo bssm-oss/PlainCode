@@ -6,6 +6,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
@@ -26,6 +27,9 @@ func (g *GoProvider) Language() string { return "go" }
 // RunUnit runs `go test -coverprofile` and parses the results.
 func (g *GoProvider) RunUnit(ctx context.Context, dir string) (*CoverageReport, error) {
 	profilePath := filepath.Join(dir, ".plaincode", "coverage", "unit.out")
+	if err := os.MkdirAll(filepath.Dir(profilePath), 0755); err != nil {
+		return nil, fmt.Errorf("creating coverage directory: %w", err)
+	}
 
 	// Safe execution via os/exec arg array — no shell
 	cmd := exec.CommandContext(ctx, "go", "test", "./...",
@@ -64,8 +68,8 @@ func (g *GoProvider) FindGaps(report *CoverageReport) []CoverageGap {
 	for path, fileCov := range report.Files {
 		for _, r := range fileCov.UncoveredRanges {
 			gaps = append(gaps, CoverageGap{
-				File:      path,
-				LineRange: r,
+				File:        path,
+				LineRange:   r,
 				Description: fmt.Sprintf("lines %d-%d not covered", r.Start, r.End),
 			})
 		}
@@ -77,9 +81,7 @@ func (g *GoProvider) FindGaps(report *CoverageReport) []CoverageGap {
 // parseCoverProfile reads a Go coverage profile and produces a report.
 // Format: mode: <mode>\n<file>:<start.col>,<end.col> <stmts> <count>
 func parseCoverProfile(path string) (*CoverageReport, error) {
-	// Use os.Open via exec-safe path
-	cmd := exec.Command("cat", path) // NOTE: for simplicity; TODO: use os.ReadFile
-	data, err := cmd.Output()
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("reading profile: %w", err)
 	}

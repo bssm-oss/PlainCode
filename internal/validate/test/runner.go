@@ -9,6 +9,7 @@
 package test
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"os/exec"
@@ -54,12 +55,17 @@ func (r *Runner) Run(ctx context.Context, workDir, command string) (*Result, err
 	cmd := exec.CommandContext(ctx, parts[0], parts[1:]...)
 	cmd.Dir = workDir
 
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
 	start := time.Now()
-	output, err := cmd.CombinedOutput()
+	err := cmd.Run()
 	duration := time.Since(start)
 
 	result := &Result{
-		Stdout:   string(output),
+		Stdout:   stdout.String(),
+		Stderr:   stderr.String(),
 		Duration: duration,
 	}
 
