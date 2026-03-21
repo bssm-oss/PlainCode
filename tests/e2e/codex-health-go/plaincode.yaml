@@ -1,0 +1,13 @@
+version: 1
+project:
+  spec_dir: spec
+  state_dir: .plaincode
+  default_language: go
+defaults:
+  backend: cli:codex
+  approval: workspace-auto
+  retry_limit: 2
+providers:
+  cli:codex:
+    kind: cli-codex
+    binary: codex
