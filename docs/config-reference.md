@@ -11,29 +11,14 @@ project:
   default_language: go         # Default language for new specs
 
 defaults:
-  backend: cli:claude          # Default backend when spec doesn't specify
+  backend: cli:codex           # Default backend when spec doesn't specify
   approval: patch              # Default approval profile
   retry_limit: 3               # Max repair loop retries
 
 providers:
-  cli:claude:
-    kind: cli-claude
-    binary: claude             # Path or name of the CLI binary
   cli:codex:
     kind: cli-codex
     binary: codex
-  cli:gemini:
-    kind: cli-gemini
-    binary: gemini
-  cli:copilot:
-    kind: cli-copilot
-    binary: copilot
-  cli:cursor:
-    kind: cli-cursor
-    binary: cursor-cli
-  cli:opencode:
-    kind: cli-opencode
-    binary: opencode
 ```
 
 ## Provider Kinds
@@ -57,7 +42,7 @@ When `plaincode init` creates a new project:
 | `spec_dir` | `spec` |
 | `state_dir` | `.plaincode` |
 | `default_language` | `go` |
-| `backend` | `openai:gpt-4o` |
+| `backend` | `cli:codex` |
 | `approval` | `patch` |
 | `retry_limit` | `3` |
 

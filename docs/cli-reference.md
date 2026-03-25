@@ -24,7 +24,8 @@ plaincode init
 
 Creates:
 - `plaincode.yaml` — project configuration
-- `spec/` — directory for spec files
+- `spec/blueprint.md.txt` — starter blueprint you can copy into a real spec
+- `README.plaincode.ko.md` — Korean quick-start guide for the new project
 - `.plaincode/` — state directory (add to .gitignore)
 
 ---
@@ -211,4 +212,15 @@ Print version.
 ```bash
 plaincode version
 # plaincode 0.1.0-dev
+```
+
+### `plaincode help`
+
+Show CLI usage in the requested language.
+
+```bash
+plaincode help --lang ko
+plaincode help --lang en
+plaincode --help
+plaincode -h
 ```

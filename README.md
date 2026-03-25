@@ -17,6 +17,7 @@ Works immediately:
 ```bash
 plaincode version
 plaincode init
+plaincode help --lang ko
 plaincode build --spec my-feature
 plaincode providers list
 ```
@@ -161,7 +162,7 @@ This prevents "spec rot" — specs that look right but can't actually reproduce 
 ### Install
 
 ```bash
-go install github.com/bssm-oss/PlainCode/cmd/forge@latest
+go install github.com/bssm-oss/PlainCode/cmd/plaincode@latest
 ```
 
 ### Initialize a Project
@@ -173,8 +174,16 @@ plaincode init
 
 This creates:
 - `plaincode.yaml` — project configuration
-- `spec/` — directory for spec files
+- `spec/blueprint.md.txt` — starter blueprint you can copy into a real spec
+- `README.plaincode.ko.md` — Korean quick-start guide
 - `.plaincode/` — state directory (add to `.gitignore`)
+
+You can view CLI help immediately:
+
+```bash
+plaincode help --lang ko
+plaincode help --lang en
+```
 
 ### Write a Spec
 
@@ -192,8 +201,7 @@ managed_files:
     - go.mod
 backend:
   preferred:
-    - cli:claude
-    - openai:gpt-4o
+    - cli:codex
 approval: patch
 tests:
   command: go test ./internal/greeter/...
@@ -281,6 +289,7 @@ See all configuration options in [docs/spec-format.md](docs/spec-format.md).
 | Command | Description |
 |---|---|
 | `plaincode init` | Initialize a new PlainCode project |
+| `plaincode help [--lang ko|en]` | Show CLI usage in Korean or English |
 | `plaincode build [--spec <id>]` | Build one or all dirty specs |
 | `plaincode build --dry-run` | Parse and validate only |
 | `plaincode change -m "..."` | Fix implementation bug (spec stays unchanged) |
@@ -369,7 +378,8 @@ forge/
 
 ### What Works Today
 
-- **`plaincode init`**: Creates project structure with `plaincode.yaml`, `spec/`, `.plaincode/`
+- **`plaincode init`**: Creates `plaincode.yaml`, `spec/blueprint.md.txt`, `README.plaincode.ko.md`, and `.plaincode/`
+- **`plaincode help --lang ko|en`**: Prints localized CLI help in Korean or English
 - **`plaincode build --spec <id> --dry-run`**: Parses spec, validates frontmatter strictly, reports parsed result
 - **`plaincode parse-spec <file>`**: Debug command to dump parsed spec as JSON
 - **Spec parser**: YAML frontmatter with strict unknown field rejection, Markdown body section extraction, SHA-256 hash computation
