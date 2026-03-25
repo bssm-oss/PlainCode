@@ -11,7 +11,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/bssm-oss/PlainCode/internal/app"
 	"github.com/bssm-oss/PlainCode/internal/config"
@@ -22,12 +21,17 @@ const version = "0.1.0-dev"
 
 func main() {
 	if len(os.Args) < 2 {
-		printUsage()
+		printUsage(nil)
 		os.Exit(1)
 	}
 
 	cmd := os.Args[1]
 	args := os.Args[2:]
+
+	if cmd == "help" || cmd == "--help" || cmd == "-h" {
+		printUsage(args)
+		return
+	}
 
 	switch cmd {
 	case "init":
@@ -56,76 +60,30 @@ func main() {
 		cmdParseSpec(args) // development/debug command
 	default:
 		fmt.Fprintf(os.Stderr, "unknown command: %s\n", cmd)
-		printUsage()
+		printUsage(nil)
 		os.Exit(1)
 	}
-}
-
-func printUsage() {
-	fmt.Print(`plaincode — spec-first multi-agent build orchestrator
-
-Usage: plaincode <command> [options]
-
-Core Commands:
-  init                        Initialize a new PlainCode project
-  build [--spec <id>]         Build specs into code
-  change -m "description"     Fix implementation bug (not spec change)
-  takeover <file|package>     Extract spec from existing code
-  coverage                    Run coverage analysis and gap filling
-
-Inspection Commands:
-  providers list|doctor       Manage AI backends
-  agents list                 List AGENTS.md and skills
-  trace <build-id>            Inspect build receipt and trace
-  explain <spec-id>           Explain spec dependencies and ownership
-
-Platform Commands:
-  serve                       Start HTTP daemon (OpenAPI + SSE)
-
-Development Commands:
-  parse-spec <file>           Parse and dump a spec file (debug)
-  version                     Print version
-
-`)
 }
 
 // cmdInit initializes a new PlainCode project in the current directory.
 func cmdInit(args []string) {
 	dir, _ := os.Getwd()
 
-	// Check if plaincode.yaml already exists
-	if _, err := os.Stat(filepath.Join(dir, "plaincode.yaml")); err == nil {
-		fmt.Fprintln(os.Stderr, "plaincode.yaml already exists in this directory")
-		os.Exit(1)
-	}
-
-	// Create directory structure
-	dirs := []string{
-		"spec",
-		".plaincode",
-		".plaincode/builds",
-	}
-	for _, d := range dirs {
-		if err := os.MkdirAll(filepath.Join(dir, d), 0755); err != nil {
-			fmt.Fprintf(os.Stderr, "creating directory %s: %v\n", d, err)
-			os.Exit(1)
-		}
-	}
-
-	// Write default config
-	if err := config.WriteDefault(dir); err != nil {
-		fmt.Fprintf(os.Stderr, "writing plaincode.yaml: %v\n", err)
+	if err := initProject(dir); err != nil {
+		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 
 	fmt.Println("Initialized PlainCode project:")
 	fmt.Println("  plaincode.yaml  — project configuration")
-	fmt.Println("  spec/       — spec files directory")
+	fmt.Println("  spec/blueprint.md.txt — starter spec blueprint")
+	fmt.Println("  README.plaincode.ko.md — Korean quick-start guide")
 	fmt.Println("  .plaincode/     — state directory (add to .gitignore)")
 	fmt.Println()
 	fmt.Println("Next steps:")
-	fmt.Println("  1. Create a spec:   spec/my-feature.md")
-	fmt.Println("  2. Build it:        plaincode build --spec my-feature")
+	fmt.Println("  1. Copy the blueprint: cp spec/blueprint.md.txt spec/my-feature.md")
+	fmt.Println("  2. Edit the spec:     set id, owned files, and requirements")
+	fmt.Println("  3. Build it:          plaincode build --spec my-feature")
 }
 
 // cmdBuild builds one or all specs through the full pipeline.

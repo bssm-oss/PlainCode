@@ -21,6 +21,14 @@ func TestDefaultProjectConfig(t *testing.T) {
 	if cfg.Defaults.Approval != "patch" {
 		t.Errorf("expected approval 'patch', got %q", cfg.Defaults.Approval)
 	}
+	if cfg.Defaults.Backend != "cli:codex" {
+		t.Errorf("expected backend 'cli:codex', got %q", cfg.Defaults.Backend)
+	}
+	if provider, ok := cfg.Providers["cli:codex"]; !ok {
+		t.Fatal("expected cli:codex provider in defaults")
+	} else if provider.Kind != "cli-codex" {
+		t.Errorf("expected cli:codex kind 'cli-codex', got %q", provider.Kind)
+	}
 }
 
 func TestValidate_Valid(t *testing.T) {

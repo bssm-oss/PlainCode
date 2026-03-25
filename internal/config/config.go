@@ -1,10 +1,10 @@
 // Package config loads and validates plaincode.yaml project configuration.
 //
 // The configuration hierarchy is:
-//   1. plaincode.yaml (project root)
-//   2. ~/.plaincode/config.yaml (user global)
-//   3. Environment variables (PLAINCODE_*)
-//   4. CLI flags (highest priority)
+//  1. plaincode.yaml (project root)
+//  2. ~/.plaincode/config.yaml (user global)
+//  3. Environment variables (PLAINCODE_*)
+//  4. CLI flags (highest priority)
 package config
 
 import (
@@ -17,9 +17,9 @@ import (
 
 // ProjectConfig is the top-level plaincode.yaml structure.
 type ProjectConfig struct {
-	Version  int             `yaml:"version"`
-	Project  ProjectSettings `yaml:"project"`
-	Defaults DefaultSettings `yaml:"defaults"`
+	Version   int                       `yaml:"version"`
+	Project   ProjectSettings           `yaml:"project"`
+	Defaults  DefaultSettings           `yaml:"defaults"`
 	Providers map[string]ProviderConfig `yaml:"providers,omitempty"`
 }
 
@@ -55,9 +55,15 @@ func DefaultProjectConfig() ProjectConfig {
 			DefaultLanguage: "go",
 		},
 		Defaults: DefaultSettings{
-			Backend:    "openai:gpt-4o",
+			Backend:    "cli:codex",
 			Approval:   "patch",
 			RetryLimit: 3,
+		},
+		Providers: map[string]ProviderConfig{
+			"cli:codex": {
+				Kind:   "cli-codex",
+				Binary: "codex",
+			},
 		},
 	}
 }
