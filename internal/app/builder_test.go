@@ -523,6 +523,7 @@ func TestLoadSpecs(t *testing.T) {
 
 	specData := []byte(sampleGoSpec("/bin/echo ok", "0.0", "owned.txt"))
 	mustWriteFile(t, filepath.Join(specDir, "hello", "greeter.md"), specData)
+	mustWriteFile(t, filepath.Join(specDir, "_blueprint.md"), []byte("# template\n"))
 
 	result, err := LoadSpecs(specDir)
 	if err != nil {

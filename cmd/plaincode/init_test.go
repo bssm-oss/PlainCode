@@ -21,6 +21,7 @@ func TestInitProjectCreatesStarterFiles(t *testing.T) {
 		filepath.Join(dir, "spec"),
 		filepath.Join(dir, ".plaincode"),
 		filepath.Join(dir, ".plaincode", "builds"),
+		filepath.Join(dir, ".plaincode", "runs"),
 		filepath.Join(dir, initBlueprintPath),
 		filepath.Join(dir, initReadmePath),
 	}
@@ -56,6 +57,12 @@ func TestInitProjectCreatesStarterFiles(t *testing.T) {
 	if !strings.Contains(blueprint, "plaincode build --spec <id>") {
 		t.Fatalf("blueprint is missing build instructions:\n%s", blueprint)
 	}
+	if !strings.Contains(blueprint, "default_mode: process") {
+		t.Fatalf("blueprint is missing runtime default mode:\n%s", blueprint)
+	}
+	if !strings.Contains(blueprint, "healthcheck_url: http://127.0.0.1:8080/health") {
+		t.Fatalf("blueprint is missing runtime healthcheck example:\n%s", blueprint)
+	}
 
 	readmeData, err := os.ReadFile(filepath.Join(dir, initReadmePath))
 	if err != nil {
@@ -65,8 +72,11 @@ func TestInitProjectCreatesStarterFiles(t *testing.T) {
 	if !strings.Contains(readme, "PlainCode 시작 가이드") {
 		t.Fatalf("README is missing Korean title:\n%s", readme)
 	}
-	if !strings.Contains(readme, "cp spec/blueprint.md.txt spec/hello.md") {
+	if !strings.Contains(readme, "cp spec/_blueprint.md spec/hello.md") {
 		t.Fatalf("README is missing quick-start copy command:\n%s", readme)
+	}
+	if !strings.Contains(readme, "plaincode run --spec hello --build") {
+		t.Fatalf("README is missing runtime quick start:\n%s", readme)
 	}
 }
 

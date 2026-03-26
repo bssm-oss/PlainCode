@@ -44,7 +44,7 @@ func LoadSpecs(specDir string) (*LoadResult, error) {
 		if err != nil {
 			return nil // skip inaccessible paths
 		}
-		if info.IsDir() || !strings.HasSuffix(path, ".md") {
+		if info.IsDir() || !strings.HasSuffix(path, ".md") || shouldIgnoreSpecFile(path) {
 			return nil
 		}
 
@@ -106,4 +106,9 @@ func LoadSpecs(specDir string) (*LoadResult, error) {
 func LoadSingleSpec(specDir, specID string) (*ast.Spec, error) {
 	path := filepath.Join(specDir, specID+".md")
 	return parser.ParseFile(path)
+}
+
+func shouldIgnoreSpecFile(path string) bool {
+	base := filepath.Base(path)
+	return strings.HasPrefix(base, "_")
 }
