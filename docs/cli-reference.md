@@ -127,7 +127,10 @@ plaincode test --spec hello/greeter --skip-command
 **Supported HTTP oracle patterns today:**
 - ``GET /health returns status 200.``
 - ``GET /health returns status 200 and {"status":"good"}.``
+- ``GET /unknown returns status 404.``
+- ``GET /api/solve?n=3 has moveCount 7``
 - ``GET /api/solve?n=3 where moveCount is 7``
+- ``GET /api/solve?n=3 의 moveCount 는 7 이다.``
 - ``GET /api/solve?n=3 의 moves 길이는 7 이다.``
 - ``GET /api/solve?n=0 은 400 이다.``
 
@@ -152,7 +155,7 @@ plaincode run --spec hello/greeter --mode docker
 |---|---|
 | `--spec <id>` | Spec ID to start |
 | `--build` | Build the spec before starting it |
-| `--mode <auto|process|docker>` | Override runtime selection |
+| `--mode <auto|process|docker>` | Override runtime selection (otherwise the spec's runtime mode is used) |
 | `--wait <duration>` | Wait for the runtime health check before returning |
 | `--json` | Output runtime state as JSON |
 
@@ -343,6 +346,10 @@ plaincode serve
 ```
 
 Endpoints: `/build`, `/health`, `/providers`, `/policies`, `/openapi.json`
+
+Current server surface:
+- working now: `/health`, `/providers`, `/policies`, `/openapi.json`
+- scaffolded but not implemented yet: `/build`, `/builds/:id`, `/events`
 
 ---
 
