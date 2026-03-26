@@ -40,6 +40,9 @@ type Spec struct {
 	// Budget constrains resource usage for a single build.
 	Budget BudgetCfg `yaml:"budget"`
 
+	// Runtime specifies how a built service should be started and managed.
+	Runtime RuntimeConfig `yaml:"runtime,omitempty"`
+
 	// --- Computed fields (not from YAML) ---
 
 	// Hash is a SHA-256 truncated hash of the raw spec file content.
@@ -81,6 +84,41 @@ type TestConfig struct {
 // CoverageCfg specifies the target coverage percentage (0.0–1.0).
 type CoverageCfg struct {
 	Target float64 `yaml:"target"`
+}
+
+// RuntimeConfig specifies how a built service should be managed locally.
+type RuntimeConfig struct {
+	// Mode is the preferred runtime launcher: auto, process, or docker.
+	Mode string `yaml:"mode,omitempty"`
+
+	// DefaultMode is the legacy alias kept for compatibility.
+	DefaultMode string         `yaml:"default_mode,omitempty"`
+
+	// HealthURL is a top-level service healthcheck URL.
+	HealthURL string `yaml:"health_url,omitempty"`
+
+	Process ProcessRuntime `yaml:"process,omitempty"`
+	Docker  DockerRuntime  `yaml:"docker,omitempty"`
+}
+
+// ProcessRuntime defines direct process execution settings.
+type ProcessRuntime struct {
+	Command        string            `yaml:"command,omitempty"`
+	Cwd            string            `yaml:"cwd,omitempty"`
+	WorkingDir     string            `yaml:"working_dir,omitempty"`
+	Env            map[string]string `yaml:"env,omitempty"`
+	HealthcheckURL string            `yaml:"healthcheck_url,omitempty"`
+}
+
+// DockerRuntime defines Docker-based execution settings.
+type DockerRuntime struct {
+	Context        string            `yaml:"context,omitempty"`
+	Dockerfile     string            `yaml:"dockerfile,omitempty"`
+	Image          string            `yaml:"image,omitempty"`
+	ContainerName  string            `yaml:"container_name,omitempty"`
+	Ports          []string          `yaml:"ports,omitempty"`
+	Env            map[string]string `yaml:"env,omitempty"`
+	HealthcheckURL string            `yaml:"healthcheck_url,omitempty"`
 }
 
 // BudgetCfg constrains resource usage for a single build.

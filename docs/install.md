@@ -55,6 +55,22 @@ Check which tools are available:
 plaincode providers doctor
 ```
 
+## Tool Path Resolution
+
+For spec execution paths such as `plaincode test`, `plaincode run`, and Go coverage collection, PlainCode also searches common tool install locations when PATH is minimal:
+
+- `/usr/local/go/bin`
+- `/usr/local/bin`
+- `/opt/homebrew/bin`
+- `/Applications/Docker.app/Contents/Resources/bin`
+- `/usr/bin`, `/bin`, `/usr/sbin`, `/sbin`
+
+This mainly helps with `go` and `docker` in Desktop/macOS/Homebrew environments.
+
+Provider CLIs such as `codex`, `claude`, or `gemini` should still either:
+- be available on PATH, or
+- be configured with an absolute `binary:` path in `plaincode.yaml`
+
 ## Uninstall
 
 ```bash
