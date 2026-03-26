@@ -1,68 +1,72 @@
 # Project Structure
 
-```
+```text
 PlainCode/
 ├── cmd/
-│   ├── plaincode/          # CLI entrypoint
-│   │   └── main.go         # Command routing, flag parsing
-│   └── plaincoded/         # Daemon entrypoint
-│       └── main.go         # HTTP server startup
+│   ├── plaincode/              # CLI entrypoint and user-facing commands
+│   │   ├── main.go             # Command routing
+│   │   ├── init.go             # Project scaffolding
+│   │   ├── help.go             # Localized CLI help
+│   │   ├── runtime.go          # run / stop / status
+│   │   ├── logs.go             # runtime log and event inspection
+│   │   └── test.go             # spec verification command
+│   └── plaincoded/             # Daemon entrypoint
 ├── internal/
-│   ├── app/                # Build orchestration
-│   │   ├── builder.go      # 21-step build pipeline
-│   │   ├── builder_test.go # E2E tests with mock backend
-│   │   ├── loader.go       # Spec directory scanner
-│   │   └── registry.go     # Backend auto-registration from config
-│   ├── backend/
-│   │   ├── core/           # Backend interface definitions
-│   │   │   ├── backend.go  # Backend, CapabilitySet, ExecRequest/Result
-│   │   │   ├── patch.go    # PatchOp: WriteFile, DeleteFile, RenameFile, ApplyDiff
-│   │   │   └── registry.go # Registry: Register, Select, HealthCheckAll
-│   │   ├── mock/           # Test backend (no API needed)
-│   │   │   └── mock.go
-│   │   └── cli/            # CLI backend adapters
-│   │       ├── common.go   # ExecCLI, ParseFileBlocks, CheckBinary
-│   │       ├── claude/     # claude --print -p <prompt>
-│   │       ├── codex/      # codex exec --full-auto <prompt>
-│   │       ├── gemini/     # gemini -p <prompt> --yolo
-│   │       ├── copilot/    # copilot -p <prompt> --allow-all-tools
-│   │       ├── cursor/     # cursor-cli generate --auto-run
-│   │       └── opencode/   # opencode generate --auto
-│   ├── config/             # plaincode.yaml loader
-│   ├── contextpack/        # Prompt context assembly
-│   ├── graph/              # Build dependency graph
-│   ├── hooks/              # Build lifecycle hooks (8 events)
-│   ├── mcp/                # MCP server registry
-│   ├── policy/             # 5 approval profiles
-│   ├── receipt/            # Build receipt store
-│   ├── server/             # HTTP daemon (OpenAPI + SSE)
-│   ├── skills/             # AGENTS.md / SKILL.md loader
+│   ├── app/                    # Build orchestration and spec loading
+│   ├── backend/                # CLI/API backend adapters and registry
+│   ├── config/                 # plaincode.yaml loading and defaults
+│   ├── contextpack/            # Prompt/context assembly for builds
+│   ├── execenv/                # Binary lookup and PATH normalization
+│   ├── graph/                  # Dirty detection and dependency ordering
+│   ├── hooks/                  # Build lifecycle hooks
+│   ├── mcp/                    # MCP registry support
+│   ├── policy/                 # Approval profile mapping
+│   ├── receipt/                # Build receipt persistence
+│   ├── runtime/                # Managed process/docker lifecycle
+│   ├── server/                 # HTTP daemon surface
+│   ├── skills/                 # AGENTS.md and SKILL.md loading
 │   ├── spec/
-│   │   ├── ast/            # Spec type definitions
-│   │   ├── ir/             # Normalized spec IR + resolver
-│   │   ├── imports/        # Import resolver with cycle detection
-│   │   └── parser/         # Markdown + YAML frontmatter parser
-│   ├── takeover/           # Code → spec extraction
+│   │   ├── ast/                # Parsed spec types
+│   │   ├── imports/            # Import resolution
+│   │   ├── ir/                 # Normalized spec representation
+│   │   └── parser/             # Markdown + YAML frontmatter parser
+│   ├── takeover/               # Code → spec workflows
+│   ├── telemetry/              # Profiling hooks
 │   ├── validate/
-│   │   ├── coverage/       # Language-specific coverage providers
-│   │   ├── repair/         # Failure classification + repair loop
-│   │   └── test/           # Test runner abstraction
+│   │   ├── coverage/           # Coverage providers
+│   │   ├── lint/               # Shared-file lint checks
+│   │   ├── repair/             # Repair-loop context and artifacts
+│   │   ├── speccheck/          # `plaincode test` oracle runner
+│   │   └── test/               # `tests.command` execution
 │   └── workspace/
-│       ├── fsguard/        # File ownership validator
-│       ├── patch/          # Patch application engine
-│       └── worktree/       # Git worktree manager
-├── docs/                   # Documentation (you are here)
-├── examples/               # Sample projects
-├── prompts/                # System prompt templates
-├── schemas/                # JSON schemas for receipts, specs
-├── Makefile
-├── install.sh
-├── plaincode.yaml          # This project's own config
-└── README.md
+│       ├── fsguard/            # Ownership validation
+│       ├── patch/              # Patch application
+│       ├── snapshot/           # Workspace rollback for retry safety
+│       └── worktree/           # Optional git worktree helpers
+├── docs/                       # User and design documentation
+├── examples/                   # Example projects
+├── pkg/                        # Public packages
+├── prompts/                    # Embedded system prompt templates
+├── schemas/                    # JSON schemas
+└── tests/e2e/                  # Manual real-backend smoke fixtures
 ```
 
-## Module Count
+## Key Execution Paths
 
-- **41 Go source files**
-- **9 test suites** (all passing)
-- **27 Go packages**
+The most important paths for current day-to-day use are:
+
+- `cmd/plaincode/main.go` → CLI entrypoint
+- `internal/app/builder.go` → spec build orchestration
+- `internal/runtime/manager.go` → process/docker runtime lifecycle
+- `internal/validate/speccheck/checker.go` → `plaincode test`
+- `internal/receipt/store.go` → build artifacts and metadata
+
+## State Written At Runtime
+
+PlainCode writes project-local state under `.plaincode/`:
+
+- `.plaincode/builds/<build-id>/` — build receipts and validation artifacts
+- `.plaincode/coverage/` — coverage output
+- `.plaincode/runs/` — runtime state, logs, and event timelines
+
+These directories are part of the product's normal operation and should usually be gitignored in downstream projects.

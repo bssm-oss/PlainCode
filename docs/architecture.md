@@ -15,7 +15,7 @@ Three axioms drive every design decision:
 ```
 ┌─────────────────────────────────────────────┐
 │                CLI / Daemon                  │
-│           (cmd/forge, cmd/forged)            │
+│       (cmd/plaincode, cmd/plaincoded)        │
 ├─────────────────────────────────────────────┤
 │              Config Loader                   │
 │           (internal/config)                  │
@@ -61,7 +61,7 @@ Spec IR
     ↓ topological sort, dirty detection
 Build Graph
     ↓ for each dirty spec:
-    │   ↓ create git worktree
+    │   ↓ snapshot current workspace state
     │   ↓ assemble context pack
     │   ↓ select backend (API or CLI)
     │   ↓ execute with policy constraints
