@@ -17,16 +17,40 @@ go build ./cmd/plaincode/
 go test ./...
 ```
 
-Current test suites (9):
-- `internal/spec/parser` — Spec parsing, frontmatter validation, section extraction
-- `internal/graph` — Topological sort, cycle detection, dirty propagation
-- `internal/workspace/fsguard` — Ownership validation
-- `internal/config` — Config load/save/validate
-- `internal/receipt` — Receipt store save/load/query
-- `internal/spec/ir` — IR resolution, ownership conflict detection
-- `internal/backend/mock` — Mock backend execution
-- `internal/backend/cli` — ParseFileBlocks, adapter ID/Capabilities, BuildArgs
-- `internal/app` — E2E build pipeline with mock backend
+Current automated test packages include:
+- `cmd/plaincode` — init/help/runtime/test CLI surfaces
+- `internal/app` — build loop and receipt behavior
+- `internal/backend/cli` — adapter parsing and argument mapping
+- `internal/backend/mock` — deterministic backend behavior
+- `internal/config` — config defaults and round-trip loading
+- `internal/execenv` — fallback binary/path resolution
+- `internal/graph` — dependency sorting and dirty propagation
+- `internal/receipt` — receipt persistence
+- `internal/runtime` — process/docker lifecycle and event logging
+- `internal/spec/ir` — import resolution and ownership conflicts
+- `internal/spec/parser` — frontmatter validation and section extraction
+- `internal/validate/coverage` — Go coverage parsing and execution
+- `internal/validate/repair` — repair classification/prompt assembly
+- `internal/validate/speccheck` — `plaincode test` HTTP oracle execution
+- `internal/validate/test` — `tests.command` execution
+- `internal/workspace/fsguard` — patch ownership validation
+
+Additional repo-level verification used during development:
+
+```bash
+go vet ./...
+```
+
+Manual smoke path for a fresh project:
+
+```bash
+plaincode init
+plaincode build --spec health/server --json
+plaincode test --spec health/server --json
+plaincode run --spec health/server --mode process
+plaincode run --spec health/server --mode docker
+plaincode stop --spec health/server
+```
 
 ## Benchmarks
 
@@ -60,5 +84,6 @@ go vet ./...
 - All CLI invocations use `os/exec` with arg arrays (no shell)
 - All public types and packages have godoc comments
 - Tests use `t.TempDir()` for isolation
+- Runtime/test/coverage subprocesses should use the shared binary/path resolution helpers in `internal/execenv`
 - TODO/FIXME markers for unfinished work
 - Errors wrap with `fmt.Errorf("context: %w", err)`

@@ -19,6 +19,8 @@ plaincode version
 plaincode init
 plaincode help --lang ko
 plaincode build --spec my-feature
+plaincode test --spec my-feature
+plaincode run --spec my-feature --build
 plaincode providers list
 ```
 
@@ -30,7 +32,7 @@ PlainCode is an orchestrator that treats **specifications as the source of truth
 
 ---
 
-## Why Forge?
+## Why PlainCode?
 
 ### The Problem
 
@@ -45,7 +47,7 @@ Current AI code generation tools share common weaknesses:
 
 ### PlainCode's Answer
 
-| Problem | Forge's Solution |
+| Problem | PlainCode's Solution |
 |---|---|
 | Provider lock-in | 3 API backends + 6 CLI adapters, all interchangeable |
 | No file governance | Three-tier ownership: owned / shared / readonly per spec |
@@ -74,6 +76,9 @@ Every code change starts with a spec. A spec is a Markdown file with structured 
 
 When you change a spec and run `plaincode build`, the system computes the diff, generates new code, validates it against tests and ownership rules, and saves a receipt.
 
+`plaincode build` only produces code and receipts. `plaincode test` verifies the current implementation against the spec, and long-running services are managed explicitly with `plaincode run`, `plaincode status`, and `plaincode stop`.
+Runtime logs and lifecycle events are persisted under `.plaincode/runs/` so failed starts and unexpected exits are debuggable after the fact.
+
 ### Three-Tier File Ownership
 
 Each spec declares which files it controls:
@@ -96,22 +101,22 @@ This is critical for real-world adoption in established repositories.
 
 PlainCode supports two categories of AI backends:
 
-**Remote API Backends** (direct model access):
+**Remote API Backends** (direct model access, scaffolded):
 | Backend | SDK | Status |
 |---|---|---|
 | OpenAI | Responses API via `openai-go` | Planned |
 | Anthropic | Native Go SDK | Planned |
 | Gemini | Google GenAI SDK | Planned |
 
-**Local CLI Backends** (agent-based execution):
+**Local CLI Backends** (agent-based execution, usable today):
 | Backend | Integration | Status |
 |---|---|---|
-| Claude Code | `claude --print --output-format json` | Planned |
-| Codex CLI | `codex exec --json` | Planned |
-| Gemini CLI | `gemini -p --output-format json` | Planned |
-| Copilot CLI | `copilot -p --allow-tool` | Planned |
-| OpenCode | CLI + server (OpenAPI 3.1) | Planned |
-| Cursor | Generic CLI adapter | Planned |
+| Claude Code | CLI adapter | Implemented |
+| Codex CLI | CLI adapter | Implemented |
+| Gemini CLI | CLI adapter | Implemented |
+| Copilot CLI | CLI adapter | Implemented |
+| OpenCode | CLI adapter | Implemented |
+| Cursor | CLI adapter | Implemented |
 
 All backends implement the same `Backend` interface. Switching from Claude to Codex is a config change, not a code change.
 
@@ -132,12 +137,10 @@ Each backend driver translates these profiles to provider-specific flags interna
 ### Build Receipts
 
 Every build produces a receipt at `.plaincode/builds/<build-id>/` containing:
-- `receipt.json` — Full build metadata (spec hash, backend, model, tests, coverage, cost, duration)
-- `events.ndjson` — Streaming event log
-- `patches.json` — Applied file operations
-- `tests.json` — Test results
-- `coverage.json` — Coverage report
-- `workspace.diff` — Full workspace diff
+- `receipt.json` — Full build metadata (spec hash, backend, tests, coverage, retries, duration)
+- `tests.json` — Captured `tests.command` result when tests ran
+- `coverage.json` — Coverage report when coverage ran
+- `repair.json` — Repair attempt summary when retries were needed
 
 This ensures every code change is traceable to a specific spec version, backend, and build.
 
@@ -174,9 +177,11 @@ plaincode init
 
 This creates:
 - `plaincode.yaml` — project configuration
-- `spec/blueprint.md.txt` — starter blueprint you can copy into a real spec
+- `spec/_blueprint.md` — starter blueprint you can copy into a real spec
 - `README.plaincode.ko.md` — Korean quick-start guide
 - `.plaincode/` — state directory (add to `.gitignore`)
+- `.plaincode/runs/` — managed runtime state
+- `.plaincode/runs/*.log` / `*.events.jsonl` — stored runtime logs and lifecycle timeline
 
 You can view CLI help immediately:
 
@@ -210,6 +215,18 @@ coverage:
 budget:
   max_turns: 5
   max_cost_usd: 2
+runtime:
+  default_mode: process
+  process:
+    command: go run .
+    working_dir: .
+    healthcheck_url: http://127.0.0.1:8080/health
+  docker:
+    dockerfile: Dockerfile
+    context: .
+    ports:
+      - 8080:8080
+    healthcheck_url: http://127.0.0.1:8080/health
 ---
 # Purpose
 
@@ -232,9 +249,46 @@ A simple greeter module that generates personalized greeting messages.
 # Parse and validate (available now)
 plaincode build --spec hello/greeter --dry-run
 
-# Full build (coming in Phase 2+)
+# Full build
 plaincode build --spec hello/greeter
+
+# Verify the implementation against the spec
+plaincode test --spec hello/greeter
 ```
+
+### Run And Stop A Service
+
+```bash
+# Build first, then start the managed service
+plaincode run --spec hello/greeter --build
+
+# Inspect runtime status
+plaincode status --spec hello/greeter
+
+# Stop the managed service
+plaincode stop --spec hello/greeter
+
+# Inspect stored logs
+plaincode logs --spec hello/greeter
+plaincode logs --spec hello/greeter --events
+```
+
+`plaincode build` does not auto-start long-running services. Build generates code and receipts; `run`, `status`, and `stop` manage the runtime lifecycle explicitly.
+
+### Verified Flow
+
+The current CLI/runtime flow has been validated on a clean Desktop project with a small Go health service spec:
+
+```bash
+plaincode init
+plaincode build --spec health/server --json
+plaincode test --spec health/server --json
+plaincode run --spec health/server --mode process
+plaincode run --spec health/server --mode docker
+plaincode stop --spec health/server
+```
+
+That flow produced owned files, a successful build receipt, stored runtime logs/events, and working `/health` responses in both process and Docker modes.
 
 ### Debug: Parse a Spec
 
@@ -259,26 +313,17 @@ project:
   default_language: go
 
 defaults:
-  backend: openai:gpt-4o
+  backend: cli:codex
   approval: patch
   retry_limit: 3
 
 providers:
-  openai:gpt-4o:
-    kind: openai
-    model: gpt-4o
-  anthropic:claude-sonnet:
-    kind: anthropic
-    model: claude-sonnet-4-20250514
-  cli:claude:
-    kind: cli-claude
-    binary: claude
   cli:codex:
     kind: cli-codex
     binary: codex
 ```
 
-See all configuration options in [docs/spec-format.md](docs/spec-format.md).
+See all configuration options in [docs/config-reference.md](docs/config-reference.md).
 
 ---
 
@@ -292,6 +337,11 @@ See all configuration options in [docs/spec-format.md](docs/spec-format.md).
 | `plaincode help [--lang ko|en]` | Show CLI usage in Korean or English |
 | `plaincode build [--spec <id>]` | Build one or all dirty specs |
 | `plaincode build --dry-run` | Parse and validate only |
+| `plaincode test --spec <id>` | Verify implementation against spec tests and test oracles |
+| `plaincode run --spec <id> [--build]` | Start a managed service |
+| `plaincode stop --spec <id>` | Stop a managed service |
+| `plaincode status [--spec <id>]` | Show managed service status |
+| `plaincode logs --spec <id>` | Show stored runtime logs or events |
 | `plaincode change -m "..."` | Fix implementation bug (spec stays unchanged) |
 | `plaincode takeover <target>` | Extract spec from existing code |
 | `plaincode coverage` | Run coverage analysis and gap filling |
@@ -324,13 +374,14 @@ See all configuration options in [docs/spec-format.md](docs/spec-format.md).
 ## Directory Layout
 
 ```
-forge/
+plaincode/
 ├── cmd/
-│   ├── forge/              # CLI entrypoint
-│   └── forged/             # Daemon entrypoint
+│   ├── plaincode/          # CLI entrypoint
+│   └── plaincoded/         # Daemon entrypoint
 ├── internal/
 │   ├── app/                # Command wiring, DI
 │   ├── config/             # plaincode.yaml loader and validation
+│   ├── execenv/            # Common binary/path resolution for subprocesses
 │   ├── spec/
 │   │   ├── parser/         # Markdown + YAML frontmatter parser
 │   │   ├── ast/            # Spec type definitions (no I/O)
@@ -357,15 +408,17 @@ forge/
 │   ├── policy/             # Approval profiles and permission engine
 │   ├── skills/             # AGENTS.md / SKILL.md loader
 │   ├── mcp/                # MCP server registry
+│   ├── runtime/            # Managed process / Docker lifecycle and logs
 │   ├── validate/
 │   │   ├── test/           # Test runner abstraction
 │   │   ├── coverage/       # Language-specific coverage providers
+│   │   ├── speccheck/      # Spec oracle runner (plaincode test)
 │   │   └── repair/         # Failure analysis and repair loop
 │   ├── takeover/           # Code → spec with round-trip verification
 │   ├── receipt/            # Build receipts and audit logs
 │   ├── server/             # HTTP daemon (OpenAPI + SSE)
 │   └── telemetry/          # pprof hooks and metrics
-├── pkg/api/                # Public Go SDK (future)
+├── pkg/                    # Public packages
 ├── schemas/                # JSON schemas for receipts, events
 ├── prompts/                # System prompt templates
 ├── examples/               # Example projects with sample specs
@@ -378,20 +431,23 @@ forge/
 
 ### What Works Today
 
-- **`plaincode init`**: Creates `plaincode.yaml`, `spec/blueprint.md.txt`, `README.plaincode.ko.md`, and `.plaincode/`
+- **`plaincode init`**: Creates `plaincode.yaml`, `spec/_blueprint.md`, `README.plaincode.ko.md`, and `.plaincode/`
 - **`plaincode help --lang ko|en`**: Prints localized CLI help in Korean or English
-- **`plaincode build --spec <id> --dry-run`**: Parses spec, validates frontmatter strictly, reports parsed result
-- **`plaincode parse-spec <file>`**: Debug command to dump parsed spec as JSON
+- **`plaincode build`**: Runs backend generation, ownership validation, tests, Go coverage, repair retries, and receipt saving
+- **`plaincode test`**: Runs `tests.command` plus parsed HTTP spec oracles and can auto-start/stop the declared runtime
+- **`plaincode run / status / stop / logs`**: Manages process and Docker runtimes with persisted state, logs, and lifecycle events
 - **Spec parser**: YAML frontmatter with strict unknown field rejection, Markdown body section extraction, SHA-256 hash computation
-- **Import resolver**: Resolves spec imports with circular dependency detection
-- **Build graph**: Topological sort, dirty detection, cycle detection
-- **Ownership validator**: Three-tier model with cross-spec conflict detection
-- **Policy engine**: 5 approval profiles with permission matrix
-- **Build receipt**: Schema defined with JSON serialization
+- **Import resolver / build graph**: Import resolution, dirty detection, dependency ordering, and conflict checks
+- **Ownership validator**: Three-tier owned/shared/readonly model with patch validation
+- **Build receipt**: Receipt, test, coverage, and runtime artifacts under `.plaincode/`
 
-### What's Coming
+### Current Limits
 
-See [docs/roadmap.md](docs/roadmap.md) for the full implementation plan.
+- `plaincode test` currently understands a focused subset of HTTP oracle sentence patterns, not arbitrary natural language
+- Go is the only coverage provider wired into the build loop today
+- The HTTP daemon and some takeover/server surfaces are still incomplete compared with the long-term roadmap
+
+See [docs/roadmap.md](docs/roadmap.md) for the broader implementation plan.
 
 ---
 
@@ -413,7 +469,7 @@ See [docs/roadmap.md](docs/roadmap.md) for the full implementation plan.
 |---|---|---|
 | Language | Go (pure, no cgo) | Single binary, cross-compile, `os/exec` safety |
 | Spec parser | `yaml.v3` + heading extraction | Strict validation with `KnownFields`, pure Go |
-| Workspace isolation | `git worktree` | Lightweight, linked to main repo |
+| Workspace safety | snapshot + rollback, optional `git worktree` helpers | Keeps failed repair attempts from polluting the workspace |
 | CLI execution | `os/exec` | No shell injection, arg-array safety |
 | Profiling | `net/http/pprof` | Built-in, zero-config |
 | Remote APIs | Native SDKs per provider | Best feature coverage |
@@ -438,17 +494,17 @@ PlainCode reads and respects existing agent configuration:
 **Q: Is this a CodeSpeak clone?**
 A: No. PlainCode shares the spec-first philosophy but is designed from scratch with multi-backend support, stronger file governance, round-trip takeover verification, and Go-native distribution. It can import from CodeSpeak projects.
 
-**Q: Do I need an AI API key to use Forge?**
+**Q: Do I need an AI API key to use PlainCode?**
 A: You need at least one configured backend (API key or local CLI tool) to build specs. Parsing, validation, and project management work without any AI backend.
 
 **Q: Can I use PlainCode with an existing codebase?**
 A: Yes. Mixed mode is a core feature. Start with one spec, use `plaincode takeover` to gradually convert existing code, and coexist with manual code indefinitely.
 
 **Q: What languages are supported?**
-A: The spec format is language-agnostic. Coverage providers are planned for Go (first), Python, TypeScript, Rust, and Java.
+A: The spec format is language-agnostic. The current validation and coverage path is strongest for Go, and the built-in coverage provider is Go-only today.
 
 **Q: Is this production-ready?**
-A: No. PlainCode is in early development (Phase 1). The spec parser, build graph, and ownership model are functional. Backend integration and full build pipeline are in progress.
+A: Not yet. The core CLI flow is usable and has been verified end-to-end, but the broader product is still early and some surfaces remain partial.
 
 **Q: Why Go instead of Rust/Python/TypeScript?**
 A: Single binary distribution with zero dependencies. Safe subprocess execution via `os/exec`. Native cross-compilation. Built-in profiling. The target users (developers using AI coding tools) need something that installs in one command and just works.

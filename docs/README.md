@@ -15,6 +15,7 @@
 | [file-ownership.md](file-ownership.md) | Three-tier ownership model (owned/shared/readonly) |
 | [receipts.md](receipts.md) | Build receipt schema and audit trail |
 | [config-reference.md](config-reference.md) | plaincode.yaml configuration reference |
+| [testing.md](testing.md) | Automated test suites, spec verification, and manual E2E flow |
 | [install.md](install.md) | Installation methods and troubleshooting |
 | [project-structure.md](project-structure.md) | Repository layout and module guide |
 | [design-decisions.md](design-decisions.md) | Why Go, why not C, why policy engine, etc. |

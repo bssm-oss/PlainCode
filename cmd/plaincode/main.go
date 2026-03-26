@@ -38,6 +38,16 @@ func main() {
 		cmdInit(args)
 	case "build":
 		cmdBuild(args)
+	case "test":
+		cmdTest(args)
+	case "run":
+		cmdRun(args)
+	case "stop":
+		cmdStop(args)
+	case "status":
+		cmdStatus(args)
+	case "logs":
+		cmdLogs(args)
 	case "change":
 		cmdChange(args)
 	case "takeover":
@@ -76,14 +86,15 @@ func cmdInit(args []string) {
 
 	fmt.Println("Initialized PlainCode project:")
 	fmt.Println("  plaincode.yaml  — project configuration")
-	fmt.Println("  spec/blueprint.md.txt — starter spec blueprint")
+	fmt.Println("  spec/_blueprint.md — starter spec blueprint")
 	fmt.Println("  README.plaincode.ko.md — Korean quick-start guide")
 	fmt.Println("  .plaincode/     — state directory (add to .gitignore)")
 	fmt.Println()
 	fmt.Println("Next steps:")
-	fmt.Println("  1. Copy the blueprint: cp spec/blueprint.md.txt spec/my-feature.md")
+	fmt.Println("  1. Copy the blueprint: cp spec/_blueprint.md spec/my-feature.md")
 	fmt.Println("  2. Edit the spec:     set id, owned files, and requirements")
 	fmt.Println("  3. Build it:          plaincode build --spec my-feature")
+	fmt.Println("  4. Run it:            plaincode run --spec my-feature --build")
 }
 
 // cmdBuild builds one or all specs through the full pipeline.

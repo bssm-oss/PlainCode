@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	initBlueprintPath = "spec/blueprint.md.txt"
+	initBlueprintPath = "spec/_blueprint.md"
 	initReadmePath    = "README.plaincode.ko.md"
 )
 
@@ -22,6 +22,7 @@ const initBlueprintTemplate = `# PlainCode 청사진 템플릿
 2. frontmatter의 id 와 managed_files.owned 를 실제 값으로 바꿉니다.
 3. 본문을 요구사항에 맞게 채웁니다.
 4. plaincode build --spec <id> 를 실행합니다.
+5. plaincode test --spec <id> 로 명세 검증을 실행합니다.
 
 예시:
 
@@ -43,6 +44,18 @@ coverage:
 budget:
   max_turns: 8
   max_cost_usd: 5
+runtime:
+  default_mode: process
+  process:
+    command: go run .
+    working_dir: .
+    healthcheck_url: http://127.0.0.1:8080/health
+  docker:
+    dockerfile: Dockerfile
+    context: .
+    ports:
+      - 8080:8080
+    healthcheck_url: http://127.0.0.1:8080/health
 ---
 # Purpose
 
@@ -77,6 +90,8 @@ budget:
 - 무엇이 통과하면 이 spec가 맞다고 볼지 적습니다.
 - 예: go test ./... 통과
 - 예: GET /health 가 200 과 {"status":"good"} 반환
+- 예: GET /api/items 의 count 는 3 이다
+- 예: GET /api/items 의 items 길이는 3 이다
 `
 
 const initReadmeTemplate = `# PlainCode 시작 가이드
@@ -86,14 +101,16 @@ const initReadmeTemplate = `# PlainCode 시작 가이드
 ## 먼저 보면 좋은 파일
 
 - plaincode.yaml: 프로젝트 기본 설정
-- spec/blueprint.md.txt: 새 spec를 만들 때 복사해서 쓰는 청사진 템플릿
+- spec/_blueprint.md: 새 spec를 만들 때 복사해서 쓰는 청사진 템플릿
 - .plaincode/: build receipt와 상태가 저장되는 디렉터리
+- .plaincode/runs/: 실행 중인 서비스 상태가 저장되는 디렉터리
+- .plaincode/runs/*.log, *.events.jsonl: 실행 로그와 이벤트 타임라인
 
 ## 가장 빠른 시작 방법
 
 1. 템플릿 복사
 
-    cp spec/blueprint.md.txt spec/hello.md
+    cp spec/_blueprint.md spec/hello.md
 
 2. spec/hello.md 안의 id, owned files, 요구사항 본문을 수정
 
@@ -101,18 +118,37 @@ const initReadmeTemplate = `# PlainCode 시작 가이드
 
     plaincode build --spec hello
 
+4. 서비스 실행
+
+    plaincode run --spec hello --build
+
+5. 상태 확인 / 중지
+
+    plaincode status --spec hello
+    plaincode stop --spec hello
+
 ## 스펙을 쓸 때 핵심 규칙
 
 - id 는 고유해야 합니다.
 - managed_files.owned 에는 PlainCode가 책임질 파일만 넣습니다.
 - spec 본문에는 구현 세부보다 **동작, 제약, 테스트 기준**을 명확히 적는 것이 중요합니다.
-- 템플릿 파일 spec/blueprint.md.txt 는 그대로 두고, 항상 복사본으로 작업하는 것을 권장합니다.
+- 템플릿 파일 spec/_blueprint.md 는 그대로 두고, 항상 복사본으로 작업하는 것을 권장합니다.
+- 런타임 관리는 spec 의 runtime 블록과 plaincode run/stop/status 명령으로 합니다.
+- 명세 검증은 plaincode test 가 tests.command 와 Test oracles 를 함께 실행합니다.
+- plaincode build 는 코드를 생성할 뿐 자동으로 서버를 켜지 않습니다.
+- 서버 시작과 종료는 plaincode run, plaincode status, plaincode stop 으로 관리합니다.
+- 디버깅이 필요하면 plaincode logs --spec <id> 와 .plaincode/runs/*.events.jsonl 을 봅니다.
 
 ## 자주 쓰는 명령어
 
     plaincode providers list
     plaincode build --spec hello
     plaincode build --spec hello --dry-run
+    plaincode test --spec hello
+    plaincode run --spec hello --build
+    plaincode status --spec hello
+    plaincode stop --spec hello
+    plaincode logs --spec hello
     plaincode parse-spec spec/hello.md
 
 ## 기본 설정
@@ -137,6 +173,7 @@ func initProject(dir string) error {
 		"spec",
 		".plaincode",
 		".plaincode/builds",
+		".plaincode/runs",
 	}
 	for _, d := range dirs {
 		if err := os.MkdirAll(filepath.Join(dir, d), 0o755); err != nil {
