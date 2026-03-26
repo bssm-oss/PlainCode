@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/bssm-oss/PlainCode/internal/execenv"
 )
 
 // GoProvider implements coverage collection for Go projects.
@@ -32,11 +34,21 @@ func (g *GoProvider) RunUnit(ctx context.Context, dir string) (*CoverageReport, 
 	}
 
 	// Safe execution via os/exec arg array — no shell
-	cmd := exec.CommandContext(ctx, "go", "test", "./...",
+	cmd := exec.CommandContext(ctx, execenv.ResolveBinary("go"), "test", "./...",
 		"-coverprofile="+profilePath,
 		"-covermode=atomic",
 	)
 	cmd.Dir = dir
+	cmd.Env = os.Environ()
+	for i, entry := range cmd.Env {
+		if strings.HasPrefix(entry, "PATH=") {
+			cmd.Env[i] = "PATH=" + execenv.EnsurePath(strings.TrimPrefix(entry, "PATH="))
+			goto collect
+		}
+	}
+	cmd.Env = append(cmd.Env, "PATH="+execenv.EnsurePath(""))
+
+collect:
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {

@@ -12,9 +12,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
 	"time"
+
+	"github.com/bssm-oss/PlainCode/internal/execenv"
 )
 
 // Result holds the outcome of a test run.
@@ -52,8 +55,18 @@ func (r *Runner) Run(ctx context.Context, workDir, command string) (*Result, err
 	}
 
 	// Safe execution via os/exec — no shell involved
-	cmd := exec.CommandContext(ctx, parts[0], parts[1:]...)
+	cmd := exec.CommandContext(ctx, execenv.ResolveBinary(parts[0]), parts[1:]...)
 	cmd.Dir = workDir
+	cmd.Env = append([]string(nil), os.Environ()...)
+	for i, entry := range cmd.Env {
+		if strings.HasPrefix(entry, "PATH=") {
+			cmd.Env[i] = "PATH=" + execenv.EnsurePath(strings.TrimPrefix(entry, "PATH="))
+			goto run
+		}
+	}
+	cmd.Env = append(cmd.Env, "PATH="+execenv.EnsurePath(""))
+
+run:
 
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout

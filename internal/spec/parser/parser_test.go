@@ -27,6 +27,12 @@ coverage:
 budget:
   max_turns: 12
   max_cost_usd: 5
+runtime:
+  default_mode: process
+  process:
+    command: go run .
+    working_dir: .
+    healthcheck_url: http://127.0.0.1:8080/health
 ---
 # Purpose
 
@@ -67,6 +73,15 @@ func TestParse_ValidSpec(t *testing.T) {
 	}
 	if spec.Budget.MaxTurns != 12 {
 		t.Errorf("expected max_turns 12, got %d", spec.Budget.MaxTurns)
+	}
+	if spec.Runtime.DefaultMode != "process" {
+		t.Errorf("expected runtime default mode process, got %q", spec.Runtime.DefaultMode)
+	}
+	if spec.Runtime.Process.Command != "go run ." {
+		t.Errorf("expected runtime command, got %q", spec.Runtime.Process.Command)
+	}
+	if spec.Runtime.Process.WorkingDir != "." {
+		t.Errorf("expected runtime working dir '.', got %q", spec.Runtime.Process.WorkingDir)
 	}
 	if spec.Hash == "" {
 		t.Error("expected non-empty hash")
@@ -114,6 +129,22 @@ Test
 	_, err := Parse(data)
 	if err == nil {
 		t.Fatal("expected error for unknown frontmatter field")
+	}
+}
+
+func TestParse_InvalidRuntimeMode(t *testing.T) {
+	data := []byte(`---
+id: test/spec
+language: go
+runtime:
+  default_mode: invalid
+---
+# Purpose
+Test
+`)
+	_, err := Parse(data)
+	if err == nil {
+		t.Fatal("expected error for invalid runtime mode")
 	}
 }
 

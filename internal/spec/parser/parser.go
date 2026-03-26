@@ -146,6 +146,18 @@ func validate(spec *ast.Spec) error {
 	if spec.Language == "" {
 		return fmt.Errorf("spec language is required")
 	}
+	mode := spec.Runtime.Mode
+	if mode == "" {
+		mode = spec.Runtime.DefaultMode
+	}
+	switch mode {
+	case "", "auto", "process", "docker":
+	default:
+		return fmt.Errorf("runtime.mode/default_mode must be one of auto, process, docker")
+	}
+	if mode == "process" && spec.Runtime.Process.Command == "" && spec.Language != "go" {
+		return fmt.Errorf("runtime.process.command is required for non-go process runtimes")
+	}
 	return nil
 }
 
