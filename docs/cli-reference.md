@@ -282,7 +282,7 @@ Registered backends (6):
   cli:cursor           structured=false mcp=false tools=false
   cli:opencode         structured=true mcp=true tools=true
 
-Default: cli:claude
+Default: cli:codex
 ```
 
 In a freshly initialized project the default backend is `cli:codex`.
